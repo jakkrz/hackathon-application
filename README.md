@@ -1,24 +1,28 @@
-# sv
+# Impact 500
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+*Impact 500* is a data-driven framework for scoring and ranking S&P 500 companies on en-
+vironmental sustainability. Rather than a single static carbon-intensity number, sustain-
+ability is decomposed into three independently-measured pillars:
+- *Level*: (current emis-
+sions burden, sector-relative)
+- *Velocity* (pace of decarbonization against a real science-based
+pathway)
+- *Integrity* (trustworthiness of the underlying data)
+These metrics are combined into one `environmental_composite_score` per company.
 
-## Creating a project
+## Data sources
 
-If you're seeing this, you've probably already done this step. Congrats!
+Real disclosures were extracted directly from 250+ companies’ CDPclimate questionnaires and sustainability reports, supplemented with government (EPA GH-
+GRP), third-party validation (SBTi), and satellite-based (Climate TRACE) data sources.
 
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
+## Running Project
 
 ```sh
 # recreate this project
 npx sv@0.17.0 create --template minimal --types ts --add prettier eslint tailwindcss="plugins:typography,forms" sveltekit-adapter="adapter:vercel" ai-tools="ide:claude-code,cursor,gemini,opencode,vscode+delivery:plugin+tools:mcp,svelte-code-writer,svelte-core-bestpractices,svelte-file-editor+mcpSetup:local" --install npm hackathon-application
 ```
 
-## Developing
+### Developing
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
@@ -29,7 +33,7 @@ npm run dev
 npm run dev -- --open
 ```
 
-## Building
+### Building
 
 To create a production version of your app:
 
