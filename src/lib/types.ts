@@ -9,6 +9,49 @@ export interface ImpactMetric extends ImpactAmount {
 	metric: string;
 }
 
+export interface EmissionsEstimate {
+	method?: string;
+	sector_used?: string;
+	peer_count?: string;
+	notes?: string;
+}
+
+export interface EmissionsScope {
+	tco2e: number | null;
+	is_estimated: boolean;
+	estimate: EmissionsEstimate | null;
+}
+
+export interface CarbonData {
+	data_source: string;
+	report_url: string;
+	is_estimated: boolean;
+	notes: string;
+	scope1: EmissionsScope;
+	scope2: EmissionsScope & {
+		location_tco2e: number | null;
+		market_tco2e: number | null;
+	};
+}
+
+export interface EnvironmentalScores {
+	environmental_composite_score: number | null;
+}
+
+export interface Sp500CompanyRecord {
+	ticker: string;
+	security: string;
+	gics_sector: string;
+	gics_sub_industry: string;
+	headquarters_location: string;
+	co2: CarbonData;
+	scores: EnvironmentalScores;
+	upright: Partial<UprightCompany> & {
+		revenue_musd?: number | string | null;
+		is_estimated?: boolean;
+	};
+}
+
 export interface UprightCompany {
 	company: string;
 	industry: string;
@@ -35,10 +78,13 @@ export interface UprightCompany {
 }
 
 export interface RankedCompany {
+	id: string;
 	companyName: string;
 	stockName: string;
 	score: number | null;
+	percentile: number | null;
 	esg: UprightCompany;
+	co2: CarbonData;
 }
 
 export type RankingMetric = 'Overall' | 'Society' | 'Knowledge' | 'Health' | 'Environment';

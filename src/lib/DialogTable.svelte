@@ -1,5 +1,7 @@
 <script lang="ts">
+	import BadgeCheck from '@lucide/svelte/icons/badge-check';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import type { RankedCompany } from '$lib/types.js';
 
 	let { stock }: { stock: RankedCompany } = $props();
@@ -12,12 +14,6 @@
 		return value?.trim() || '0';
 	}
 
-	function impactClass(value: string): string {
-		if (value.startsWith('+')) return 'text-emerald-700 dark:text-emerald-400';
-		if (value.startsWith('-')) return 'text-rose-700 dark:text-rose-400';
-		return 'text-muted-foreground';
-	}
-
 	function formattedDate(value: string): string {
 		if (!value) return 'Not available';
 		const date = new Date(value);
@@ -28,6 +24,49 @@
 					month: 'short',
 					day: 'numeric'
 				});
+	}
+
+	function formattedEmissions(value: number | null): string {
+		if (value === null || !Number.isFinite(value)) return 'Not available';
+		return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value)} tCO₂e`;
+	}
+
+	function scoreText(value: number | null): string {
+		return value === null ? 'Not available' : `${Number(value.toFixed(1))} / 100`;
+	}
+
+	function ordinal(value: number): string {
+		const remainder = value % 100;
+		if (remainder >= 11 && remainder <= 13) return `${value}th`;
+		switch (value % 10) {
+			case 1:
+				return `${value}st`;
+			case 2:
+				return `${value}nd`;
+			case 3:
+				return `${value}rd`;
+			default:
+				return `${value}th`;
+		}
+	}
+
+	function percentileText(value: number | null): string {
+		return value === null ? 'Not available' : ordinal(Math.round(value));
+	}
+
+	function sourceLabel(value: string): string {
+		const labels: Record<string, string> = {
+			cdp_pdf: 'CDP disclosure',
+			epa_ghgrp: 'EPA GHGRP',
+			sustainability_report: 'Sustainability report'
+		};
+		return labels[value] ?? value.replaceAll('_', ' ');
+	}
+
+	function estimateMethod(value: string | undefined): string {
+		if (!value) return 'Peer-based model';
+		if (value === 'median_model_revenue+employees') return 'Revenue and employee peer model';
+		return value.replaceAll('_', ' ');
 	}
 
 	function impactValue(value: string): number {
@@ -64,15 +103,15 @@
 <div>
 	<div class="grid grid-cols-2 gap-3 md:grid-cols-4">
 		<div class="rounded-lg border p-3">
-			<p class="text-xs tracking-wide text-muted-foreground uppercase">Net impact ratio</p>
-			<p class={`mt-1 text-2xl font-semibold ${impactClass(stock.esg.net_impact_ratio)}`}>
-				{shown(stock.esg.net_impact_ratio)}
+			<p class="text-xs tracking-wide text-muted-foreground uppercase">Net impact score</p>
+			<p class="mt-1 text-2xl font-semibold">
+				{scoreText(stock.score)}
 			</p>
 		</div>
 		<div class="rounded-lg border p-3">
-			<p class="text-xs tracking-wide text-muted-foreground uppercase">Global rank</p>
+			<p class="text-xs tracking-wide text-muted-foreground uppercase">S&amp;P 500 percentile</p>
 			<p class="mt-1 text-2xl font-semibold">
-				Top {shown(stock.esg.rank_top_percent)}
+				{percentileText(stock.percentile)}
 			</p>
 		</div>
 		<div class="rounded-lg border p-3">
@@ -96,17 +135,70 @@
 				<dt class="text-xs text-muted-foreground">Country of headquarters</dt>
 				<dd>{shown(stock.esg.country_of_hq)}</dd>
 			</div>
-			<div>
-				<dt class="text-xs text-muted-foreground">Companies with a lower ratio</dt>
-				<dd>
-					{shown(stock.esg.benchmark_percent_lower)}{stock.esg.benchmark_percent_lower ? '%' : ''}
-				</dd>
-			</div>
-			<div>
-				<dt class="text-xs text-muted-foreground">Model release</dt>
-				<dd>{shown(stock.esg.model_release)}</dd>
-			</div>
 		</dl>
+	</section>
+
+	<section class="mt-6">
+		<div class="mb-3">
+			<h3 class="text-lg font-semibold">Operational emissions</h3>
+			<p class="text-sm text-muted-foreground">
+				Scope 1 and Scope 2 greenhouse-gas emissions, measured in metric tonnes of CO₂ equivalent.
+			</p>
+		</div>
+
+		<div class="grid gap-3 sm:grid-cols-2">
+			{#each [{ label: 'Scope 1', description: 'Direct emissions from owned or controlled operations.', data: stock.co2.scope1 }, { label: 'Scope 2', description: 'Indirect emissions from purchased electricity, heat, or cooling.', data: stock.co2.scope2 }] as scope (scope.label)}
+				<article
+					class={`rounded-lg border p-4 ${scope.data.is_estimated ? 'border-amber-300 bg-amber-50/70 dark:border-amber-800 dark:bg-amber-950/25' : 'border-emerald-300 bg-emerald-50/70 dark:border-emerald-800 dark:bg-emerald-950/25'}`}
+				>
+					<div class="flex items-start justify-between gap-3">
+						<div>
+							<h4 class="font-semibold">{scope.label}</h4>
+							<p class="mt-1 text-2xl font-semibold">{formattedEmissions(scope.data.tco2e)}</p>
+						</div>
+						<span
+							class={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${scope.data.is_estimated ? 'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-200' : 'border-emerald-300 bg-emerald-100 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200'}`}
+						>
+							{#if scope.data.is_estimated}
+								<TriangleAlert class="size-3.5" /> Estimated
+							{:else}
+								<BadgeCheck class="size-3.5" /> Source-backed
+							{/if}
+						</span>
+					</div>
+					<p class="mt-2 text-sm text-muted-foreground">{scope.description}</p>
+					{#if scope.data.is_estimated}
+						<p
+							class="mt-3 border-t border-amber-300/70 pt-3 text-xs text-amber-900 dark:border-amber-800 dark:text-amber-200"
+						>
+							{estimateMethod(scope.data.estimate?.method)}{scope.data.estimate?.peer_count
+								? ` · ${scope.data.estimate.peer_count} peers`
+								: ''}
+						</p>
+					{:else}
+						<p
+							class="mt-3 border-t border-emerald-300/70 pt-3 text-xs text-emerald-900 dark:border-emerald-800 dark:text-emerald-200"
+						>
+							Higher confidence · obtained from a source record
+						</p>
+					{/if}
+				</article>
+			{/each}
+		</div>
+
+		<div
+			class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"
+		>
+			<p>
+				Green indicates source-backed data; amber indicates a modeled estimate. It does not indicate
+				whether emissions are environmentally good or bad.
+			</p>
+			{#if stock.co2.report_url}
+				<a class="shrink-0 underline" href={stock.co2.report_url} target="_blank" rel="noreferrer">
+					View {sourceLabel(stock.co2.data_source)} source
+				</a>
+			{/if}
+		</div>
 	</section>
 
 	<section class="mt-6">
@@ -138,7 +230,7 @@
 				</div>
 			</div>
 
-			{#each categories as [category, total]}
+			{#each categories as [category, total] (category)}
 				<button
 					type="button"
 					class={`grid w-full grid-cols-[7rem_1fr] items-center gap-3 border-b px-4 py-3 text-left transition-colors sm:grid-cols-[9rem_1fr] ${selectedCategory === category ? 'bg-primary/5 ring-1 ring-primary/30 ring-inset' : 'hover:bg-muted/50'}`}
@@ -181,7 +273,7 @@
 				{#if selectedCategory === category}
 					<div class="border-b bg-muted/20 px-4 py-3">
 						<div class="space-y-3">
-							{#each selectedMetrics as metric}
+							{#each selectedMetrics as metric (metric.metric)}
 								<div class="grid gap-1 sm:grid-cols-[12rem_1fr] sm:items-center sm:gap-4">
 									<span class="text-sm font-medium">{metric.metric}</span>
 									<div>

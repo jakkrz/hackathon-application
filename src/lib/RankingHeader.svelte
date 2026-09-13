@@ -19,7 +19,9 @@
 <div class="mb-5 w-full">
 	<Item.Root variant="outline">
 		<Item.Content class="p-3">
-			<Item.Title class="text-center text-3xl">Sustainability Ranking</Item.Title>
+			<Item.Title class="text-center text-3xl tracking-tight text-primary">
+				S&amp;P 500 Sustainability Ranking
+			</Item.Title>
 			<div class="mt-3 flex items-center gap-2">
 				<Input
 					type="search"
@@ -38,7 +40,7 @@
 						class="h-9 min-w-40 appearance-none rounded-md border border-border bg-background pr-9 pl-9 text-sm font-medium shadow-xs transition-colors outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 						aria-label="Rank companies by"
 					>
-						{#each options as option}
+						{#each options as option (option)}
 							<option value={option}>{option}</option>
 						{/each}
 					</select>

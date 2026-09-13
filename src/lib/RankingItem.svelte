@@ -31,13 +31,13 @@
 	function formattedScore() {
 		if (displayScore === null) return 'N/A';
 		const value = Number(displayScore.toFixed(1));
-		return selectedMetric === 'Overall' ? `${value}%` : `${value} ¢/$`;
+		return selectedMetric === 'Overall' ? `${value} / 100` : `${value} ¢/$`;
 	}
 
 	function dragStart(event: DragEvent) {
 		if (!event.dataTransfer) return;
 		event.dataTransfer.effectAllowed = 'copy';
-		event.dataTransfer.setData('application/x-ranked-company', stock.esg.upright_url);
+		event.dataTransfer.setData('application/x-ranked-company', stock.id);
 		event.dataTransfer.setData('text/plain', stock.companyName);
 	}
 </script>

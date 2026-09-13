@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button/index.js';
+	import BadgeCheck from '@lucide/svelte/icons/badge-check';
 	import GripVertical from '@lucide/svelte/icons/grip-vertical';
 	import Move from '@lucide/svelte/icons/move';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import X from '@lucide/svelte/icons/x';
 	import type { RankedCompany, RankingMetric } from '$lib/types.js';
 
@@ -31,6 +33,15 @@
 		if (!totals || (!totals.cost && !totals.benefit)) return '0 ¢/$';
 		const net = amount(totals.cost) + amount(totals.benefit);
 		return `${net > 0 ? '+' : ''}${Number(net.toFixed(1))} ¢/$`;
+	}
+
+	function formattedEmissions(value: number | null): string {
+		if (value === null || !Number.isFinite(value)) return 'Not available';
+		return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value)} tCO₂e`;
+	}
+
+	function scoreText(value: number | null): string {
+		return value === null ? 'N/A' : `${Number(value.toFixed(1))} / 100`;
 	}
 
 	function drop(event: DragEvent) {
@@ -94,44 +105,64 @@
 		</div>
 
 		<div class="min-h-0 flex-1 overflow-y-auto p-3">
-			<p
-				class="px-2 pt-1 pb-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-			>
-				Matched fields
-			</p>
-
-			<div class="space-y-2">
+			<div class="space-y-3">
+				<p class="px-2 pt-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+					Net score
+				</p>
 				<div class="min-h-18 rounded-xl border bg-background p-3">
-					<p class="text-sm font-medium">Overall net impact</p>
+					<p class="text-sm font-medium">Net impact score</p>
 					<p class="mt-1 text-lg font-semibold">
-						{company.score === null ? 'N/A' : `${company.score}%`}
+						{scoreText(company.score)}
 					</p>
 				</div>
 
-				{#each categories as category}
+				<p class="px-2 pt-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+					Operational emissions
+				</p>
+
+				{#each [{ label: 'Scope 1', data: company.co2.scope1 }, { label: 'Scope 2', data: company.co2.scope2 }] as scope (scope.label)}
+					<div
+						class={`min-h-24 rounded-xl border p-3 ${scope.data.is_estimated ? 'border-amber-300 bg-amber-50/70 dark:border-amber-800 dark:bg-amber-950/25' : 'border-emerald-300 bg-emerald-50/70 dark:border-emerald-800 dark:bg-emerald-950/25'}`}
+					>
+						<div class="flex items-start justify-between gap-2">
+							<p class="text-sm font-medium">{scope.label}</p>
+							<span
+								class={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[0.6875rem] font-semibold ${scope.data.is_estimated ? 'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-200' : 'border-emerald-300 bg-emerald-100 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200'}`}
+							>
+								{#if scope.data.is_estimated}
+									<TriangleAlert class="size-3" /> Estimated
+								{:else}
+									<BadgeCheck class="size-3" /> Source-backed
+								{/if}
+							</span>
+						</div>
+						<p class="mt-2 text-base font-semibold">{formattedEmissions(scope.data.tco2e)}</p>
+						<p
+							class={`mt-1 text-xs ${scope.data.is_estimated ? 'text-amber-900 dark:text-amber-200' : 'text-emerald-900 dark:text-emerald-200'}`}
+						>
+							{scope.data.is_estimated ? 'Modeled estimate' : 'Higher-confidence source value'}
+						</p>
+					</div>
+				{/each}
+
+				<p class="px-2 pt-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+					Impact by category
+				</p>
+
+				{#each categories as category (category)}
 					{@const totals = company.esg.category_totals[category]}
 					<div class="min-h-22 rounded-xl border bg-background p-3">
 						<p class="text-sm font-medium">{category}</p>
 						<p class="text-base font-semibold">{categoryNet(category)}</p>
 						<p class="mt-1 text-xs">
-							<span class="text-emerald-700">Benefit {totals?.benefit || '0'}</span>
+							<span class="text-emerald-700 dark:text-emerald-400"
+								>Benefit {totals?.benefit || '0'}</span
+							>
 							<span class="px-1 text-muted-foreground">·</span>
-							<span class="text-rose-700">Cost {totals?.cost || '0'}</span>
+							<span class="text-rose-700 dark:text-rose-400">Cost {totals?.cost || '0'}</span>
 						</p>
 					</div>
 				{/each}
-
-				<div class="min-h-18 rounded-xl border bg-background p-3">
-					<p class="text-sm font-medium">Revenue</p>
-					<p class="mt-1 text-sm font-semibold">
-						{company.esg.revenue || company.esg.screener_revenue_musd || 'N/A'}
-					</p>
-				</div>
-
-				<div class="min-h-18 rounded-xl border bg-background p-3">
-					<p class="text-sm font-medium">Employees</p>
-					<p class="mt-1 text-sm font-semibold">{company.esg.employee_count || 'N/A'}</p>
-				</div>
 			</div>
 		</div>
 	{:else}

@@ -54,7 +54,7 @@
 
 <div class="min-h-0 flex-1">
 	<ScrollArea class="h-full rounded-md border">
-		{#each visibleData as { stock, ranking } (stock.esg.upright_url)}
+		{#each visibleData as { stock, ranking } (stock.id)}
 			<RankingItem
 				{stock}
 				{ranking}
