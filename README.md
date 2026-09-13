@@ -1,13 +1,13 @@
 # Impact 500
 
-*Impact 500* is a data-driven framework for scoring and ranking S&P 500 companies on en-
-vironmental sustainability. Rather than a single static carbon-intensity number, sustain-
-ability is decomposed into three independently-measured pillars:
+*Impact 500* is a data-driven framework for scoring and ranking S&P 500 companies on environmental sustainability. Rather than a single static carbon-intensity number, sustainability is calculated based on the following factors:
+
 - *Level*: (current emis-
 sions burden, sector-relative)
 - *Velocity* (pace of decarbonization against a real science-based
 pathway)
 - *Integrity* (trustworthiness of the underlying data)
+
 These metrics are combined into one `environmental_composite_score` per company.
 
 ## Data sources
