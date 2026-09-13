@@ -1,40 +1,70 @@
 <script lang="ts">
-  import Ranking from '$lib/Ranking.svelte';
-  import Description from "$lib/Description.svelte";
-  import DataPanel from "$lib/DataPanel.svelte";
-  
-  interface Company {
-    companyName: string,
-    stockName: string,
-    score: number,
-  };
-  
-  const data: Array<Company> = [
-    { companyName: "Microsoft", stockName: "MSFT", score: 100 },
-    { companyName: "Google", stockName: "GOGL", score: 50 },
-    { companyName: "Apple", stockName: "AAPL", score: 20 },
-    { companyName: "NVidia", stockName: "NVIDIA", score: 10 },
-  ];
+	import Ranking from '$lib/Ranking.svelte';
+	import ComparisonPanel from '$lib/ComparisonPanel.svelte';
+	import uprightCompanies from '../upright_metrics/upright_final_esg.json';
+	import type { RankedCompany, UprightCompany } from '$lib/types.js';
 
-  let hover = $state(null);
-  let comparisonList = $state([]);
+	function percentage(value: string): number | null {
+		const parsed = Number.parseFloat(value.replace('%', ''));
+		return Number.isFinite(parsed) ? parsed : null;
+	}
 
-  function addToComparison(company: Company) {
-    comparisonList = comparisonList.concat([company]);
-  }
+	const data: RankedCompany[] = (uprightCompanies as UprightCompany[])
+		.map((esg) => ({
+			companyName: esg.company,
+			stockName: esg.company,
+			score: percentage(esg.net_impact_ratio || esg.screener_net_impact_ratio),
+			esg
+		}))
+		.sort((left, right) => (right.score ?? -Infinity) - (left.score ?? -Infinity));
 
-  function removeFromComparison(company: Company) {
-    comparisonList = comparisonList.filter((c) => c !== company);
-  }
+	let leftCompany = $state<RankedCompany | null>(null);
+	let rightCompany = $state<RankedCompany | null>(null);
+	let comparisonList = $derived(
+		[leftCompany, rightCompany].filter((company): company is RankedCompany => company !== null)
+	);
 
-  function setHover(company: Company) {
-    hover = company;
-  }
+	function addToComparison(company: RankedCompany) {
+		if (comparisonList.some((item) => item.companyName === company.companyName)) return;
+		if (!leftCompany) leftCompany = company;
+		else if (!rightCompany) rightCompany = company;
+	}
+
+	function removeFromComparison(company: RankedCompany) {
+		if (leftCompany?.companyName === company.companyName) leftCompany = null;
+		if (rightCompany?.companyName === company.companyName) rightCompany = null;
+	}
+
+	function dropCompany(side: 'left' | 'right', identifier: string) {
+		const company = data.find((item) => item.esg.upright_url === identifier);
+		if (!company) return;
+
+		if (side === 'left') {
+			if (rightCompany?.companyName === company.companyName) rightCompany = null;
+			leftCompany = company;
+		} else {
+			if (leftCompany?.companyName === company.companyName) leftCompany = null;
+			rightCompany = company;
+		}
+	}
 </script>
 
-<div class="mbe-0 h-[calc(100vh-2.5rem)] mbs-10 justify-center flex flex-row gap-10">
-  <DataPanel comparisonList={comparisonList} hover={hover}/>
-  <Ranking data={data} setHover={setHover} addToComparison={addToComparison} removeFromComparison={removeFromComparison} comparisonList={comparisonList}/>
-  <Description/>
-</div>
-
+<main
+	class="mx-auto grid min-h-screen max-w-[112rem] grid-cols-1 gap-4 p-4 xl:h-screen xl:min-h-0 xl:grid-cols-[minmax(34rem,42rem)_minmax(42rem,1fr)]"
+>
+	<Ranking {data} {addToComparison} {removeFromComparison} {comparisonList} />
+	<section class="grid min-h-0 grid-cols-1 gap-3 sm:grid-cols-2" aria-label="Company comparison">
+		<ComparisonPanel
+			company={leftCompany}
+			side="left"
+			onDropCompany={(identifier) => dropCompany('left', identifier)}
+			onRemove={() => (leftCompany = null)}
+		/>
+		<ComparisonPanel
+			company={rightCompany}
+			side="right"
+			onDropCompany={(identifier) => dropCompany('right', identifier)}
+			onRemove={() => (rightCompany = null)}
+		/>
+	</section>
+</main>

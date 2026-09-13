@@ -1,25 +1,29 @@
 <script lang="ts">
-  import RankingList from "$lib/RankingList.svelte";
-  import * as Item from "$lib/components/ui/item/index.js";
-  import Filter from "$lib/Filter.svelte"
-  import { Button } from "$lib/components/ui/button/index.js";
+	import { Button } from '$lib/components/ui/button/index.js';
+	import type { RankingMetric } from '$lib/types.js';
 
-  import * as Select from "$lib/components/ui/select/index.js";
+	let { value = $bindable(), onSelect }: { value: RankingMetric; onSelect?: () => void } = $props();
 
-  let sortByValue = $state("Overall Score");
-  let sectorValue = $state("All");
-  let subIndustryValue = $state("All");
-  
+	const options: RankingMetric[] = ['Overall', 'Society', 'Knowledge', 'Health', 'Environment'];
 </script>
 
-<div class="flex w-full flex-col">
-  <Item.Root variant="outline">
-    <Item.Content class="p-3">
-      <div class="grid grid-flow-row grid-cols-3 gap-3">
-	<Filter label="Sort by" filterOptions={["Overall Score", "Revenue", "CO2"]} bind:value={sortByValue}/>
-	<Filter label="GICS Sector" filterOptions={["All", "Tech", "Automobile", "Excavation"]} bind:value={sectorValue}/>
-	<Filter label="GICS Sub-industry" filterOptions={["All", "Tech", "Automobile", "Excavation"]} bind:value={subIndustryValue}/>
-      </div>
-    </Item.Content>
-  </Item.Root>
+<div class="mt-2 ml-auto w-48 rounded-lg border border-border bg-background p-1 shadow-sm">
+	<p class="px-2 py-1 text-xs font-medium text-muted-foreground">Rank by</p>
+	<div class="flex flex-col gap-0.5" role="radiogroup" aria-label="Ranking metric">
+		{#each options as option}
+			<Button
+				size="sm"
+				variant={value === option ? 'default' : 'ghost'}
+				class="w-full justify-start"
+				role="radio"
+				aria-checked={value === option}
+				onclick={() => {
+					value = option;
+					onSelect?.();
+				}}
+			>
+				{option}
+			</Button>
+		{/each}
+	</div>
 </div>

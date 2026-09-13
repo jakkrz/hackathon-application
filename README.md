@@ -40,3 +40,16 @@ npm run build
 You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+
+## S&P 500 financial data
+
+After downloading the SimFin annual income and cash-flow CSVs into `src/fianances/`, run this command from the project root:
+
+```sh
+python3 src/fianances/run_simfin_sp500_fcf.py
+```
+
+The script refreshes `src/fianances/output_simfin/`, including
+`sp500_three_year_financials.csv`. That file has one row per S&P 500 company,
+three years of revenue, net income, and operating cash flow, plus
+`profitable_years_last_3`.

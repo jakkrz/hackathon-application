@@ -1,13 +1,22 @@
 <script lang="ts">
-  import RankingList from "$lib/RankingList.svelte";
-  import RankingHeader from "$lib/RankingHeader.svelte";
-  
-  let { data, setHover, addToComparison, removeFromComparison, comparisonList } = $props();
-  let searchQuery = $state("");
+	import RankingList from '$lib/RankingList.svelte';
+	import RankingHeader from '$lib/RankingHeader.svelte';
+	import type { RankingMetric } from '$lib/types.js';
+
+	let { data, addToComparison, removeFromComparison, comparisonList } = $props();
+	let searchQuery = $state('');
+	let selectedMetric = $state<RankingMetric>('Overall');
 </script>
 
-<div class="w-200 h-full flex flex-col my-0">
-  <RankingHeader bind:searchQuery/>
+<section class="flex min-h-0 w-full flex-col">
+	<RankingHeader bind:searchQuery bind:selectedMetric />
 
-  <RankingList {searchQuery} {data} {setHover} {addToComparison} {removeFromComparison} {comparisonList}/>
-</div>
+	<RankingList
+		{searchQuery}
+		{selectedMetric}
+		{data}
+		{addToComparison}
+		{removeFromComparison}
+		{comparisonList}
+	/>
+</section>
